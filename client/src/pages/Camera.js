@@ -16,6 +16,58 @@ const isIOS = () => {
   (navigator.userAgent.includes('Mac') && 'ontouchend' in document);
 };
 
+// Function to detect Android device
+const isAndroid = () => {
+  return /Android/i.test(navigator.userAgent);
+};
+
+// Function to check if device is mobile
+const isMobile = () => {
+  return isIOS() || isAndroid();
+};
+
+// Function to compress image before sending to OCR
+const compressImage = (base64Image) => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = base64Image;
+    
+    img.onload = () => {
+      // Create canvas with 1:1 aspect ratio
+      const canvas = document.createElement('canvas');
+      const MAX_SIZE = 1080; // Maximum dimension
+      const size = Math.min(img.width, img.height, MAX_SIZE);
+      
+      canvas.width = size;
+      canvas.height = size;
+      
+      // Draw image at center of square canvas
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, size, size);
+      
+      // Calculate scaling and positioning to center the image
+      const scale = Math.min(size / img.width, size / img.height);
+      const x = (size - img.width * scale) / 2;
+      const y = (size - img.height * scale) / 2;
+      
+      ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+      
+      // Start with high quality
+      let quality = 0.9;
+      let result = canvas.toDataURL('image/jpeg', quality);
+      
+      // Reduce quality until file size is under 900KB
+      while (result.length > 900 * 1024 && quality > 0.3) {
+        quality -= 0.05;
+        result = canvas.toDataURL('image/jpeg', quality);
+      }
+      
+      resolve(result);
+    };
+  });
+};
+
 const Camera = () => {
   const webcamRef = useRef(null);
   const [capturedImage, setCapturedImage] = useState(null);
@@ -23,7 +75,7 @@ const Camera = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
-  const [facingMode, setFacingMode] = useState('environment');
+  const [facingMode, setFacingMode] = useState(isMobile() ? 'environment' : 'user');
   const [cameraPermission, setCameraPermission] = useState(null);
 
   useEffect(() => {
@@ -62,9 +114,10 @@ const Camera = () => {
   }, []);
 
   const videoConstraints = {
-    width: 1280,
-    height: 720,
-    facingMode: facingMode
+    width: { ideal: 1920 },
+    height: { ideal: 1920 },
+    facingMode: facingMode,
+    aspectRatio: { ideal: 1 }
   };
 
   const capture = useCallback(() => {
@@ -95,8 +148,12 @@ const Camera = () => {
     setError('');
 
     try {
+      // Compress image before sending to OCR
+      const compressedImage = await compressImage(capturedImage);
+      console.log(`Original size: ~${Math.round(capturedImage.length/1024)}KB, Compressed: ~${Math.round(compressedImage.length/1024)}KB`);
+      
       const res = await axios.post('/api/ocr/process', {
-        imageData: capturedImage
+        imageData: compressedImage
       });
 
       setOcrText(res.data.ocrText);
@@ -120,13 +177,13 @@ const Camera = () => {
       });
   };
 
-  // Special case for iOS - show a button to initiate camera
-  if (cameraPermission === null && isIOS()) {
+  // Special case for iOS and Android - show a button to initiate camera
+  if (cameraPermission === null && (isIOS() || isAndroid())) {
     return (
       <div className="camera-permission-denied">
-        <h2>Camera Access on iOS</h2>
-        <p>Safari on iOS requires you to explicitly enable the camera. Please click the button below to start camera access.</p>
-        <p><strong>Note:</strong> Safari may still block camera access if you're not using HTTPS.</p>
+        <h2>Camera Access Required</h2>
+        <p>{isIOS() ? 'Safari on iOS' : 'Your browser'} requires you to explicitly enable the camera. Please click the button below to start camera access.</p>
+        <p><strong>Note:</strong> Some browsers may block camera access if you're not using HTTPS or if permissions weren't granted previously.</p>
         <button 
           className="btn btn-primary"
           onClick={async () => {
@@ -238,7 +295,7 @@ const Camera = () => {
       {ocrText && (
         <div className="ocr-result">
           <h2>Extracted Text</h2>
-          <div className="ocr-text">
+          <div className="ocr-text arial-font">
             {ocrText}
           </div>
           <div className="ocr-actions">
