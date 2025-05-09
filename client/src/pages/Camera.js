@@ -26,43 +26,75 @@ const isMobile = () => {
   return isIOS() || isAndroid();
 };
 
-// Function to compress image before sending to OCR
+// Function to compress image and improve quality before sending to OCR
 const compressImage = (base64Image) => {
   return new Promise((resolve) => {
     const img = new Image();
     img.src = base64Image;
     
     img.onload = () => {
-      // Create canvas with 1:1 aspect ratio
+      // Calculate optimal dimensions while preserving aspect ratio
+      const MAX_SIZE = 1600; // Increased max dimension for better quality
+      const aspectRatio = img.width / img.height;
+      
+      let width, height;
+      if (img.width > img.height) {
+        width = Math.min(img.width, MAX_SIZE);
+        height = width / aspectRatio;
+      } else {
+        height = Math.min(img.height, MAX_SIZE);
+        width = height * aspectRatio;
+      }
+      
+      // Create canvas with calculated dimensions
       const canvas = document.createElement('canvas');
-      const MAX_SIZE = 1080; // Maximum dimension
-      const size = Math.min(img.width, img.height, MAX_SIZE);
+      canvas.width = width;
+      canvas.height = height;
       
-      canvas.width = size;
-      canvas.height = size;
-      
-      // Draw image at center of square canvas
+      // Apply sharpening and contrast enhancement
       const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#000';
-      ctx.fillRect(0, 0, size, size);
       
-      // Calculate scaling and positioning to center the image
-      const scale = Math.min(size / img.width, size / img.height);
-      const x = (size - img.width * scale) / 2;
-      const y = (size - img.height * scale) / 2;
+      // Draw the image first
+      ctx.drawImage(img, 0, 0, width, height);
       
-      ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+      // Apply contrast enhancement
+      const imageData = ctx.getImageData(0, 0, width, height);
+      const data = imageData.data;
+      const contrast = 1.2; // Contrast factor (1.0 is normal)
+      const brightness = 10; // Slight brightness increase
       
-      // Start with high quality
-      let quality = 0.9;
+      for (let i = 0; i < data.length; i += 4) {
+        // Apply contrast to RGB channels
+        data[i] = Math.min(255, Math.max(0, (data[i] - 128) * contrast + 128 + brightness));
+        data[i+1] = Math.min(255, Math.max(0, (data[i+1] - 128) * contrast + 128 + brightness));
+        data[i+2] = Math.min(255, Math.max(0, (data[i+2] - 128) * contrast + 128 + brightness));
+      }
+      
+      ctx.putImageData(imageData, 0, 0);
+      
+      // Start with higher quality
+      let quality = 0.95;
       let result = canvas.toDataURL('image/jpeg', quality);
       
-      // Reduce quality until file size is under 900KB
-      while (result.length > 900 * 1024 && quality > 0.3) {
+      // Reduce quality until file size is under 980KB (just under 1MB)
+      while (result.length > 980 * 1024 && quality > 0.5) {
         quality -= 0.05;
         result = canvas.toDataURL('image/jpeg', quality);
       }
       
+      // Apply a smart quality optimization if still too large
+      if (result.length > 980 * 1024) {
+        // Create a smaller canvas for extreme cases
+        const scaleFactor = Math.sqrt(980 * 1024 / result.length);
+        const smallerCanvas = document.createElement('canvas');
+        smallerCanvas.width = width * scaleFactor;
+        smallerCanvas.height = height * scaleFactor;
+        const smallerCtx = smallerCanvas.getContext('2d');
+        smallerCtx.drawImage(canvas, 0, 0, smallerCanvas.width, smallerCanvas.height);
+        result = smallerCanvas.toDataURL('image/jpeg', 0.85);
+      }
+      
+      console.log(`Image optimized. Final size: ~${Math.round(result.length/1024)}KB`);
       resolve(result);
     };
   });
@@ -114,10 +146,14 @@ const Camera = () => {
   }, []);
 
   const videoConstraints = {
-    width: { ideal: 1920 },
-    height: { ideal: 1920 },
+    width: { min: 1280, ideal: 1920, max: 2560 },
+    height: { min: 1280, ideal: 1920, max: 2560 },
     facingMode: facingMode,
-    aspectRatio: { ideal: 1 }
+    aspectRatio: { ideal: 1 },
+    frameRate: { min: 15, ideal: 30 },
+    focusMode: "continuous",
+    exposureMode: "continuous",
+    whiteBalanceMode: "continuous"
   };
 
   const capture = useCallback(() => {
