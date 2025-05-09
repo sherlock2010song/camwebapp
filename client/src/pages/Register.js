@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 
 const Register = () => {
@@ -10,8 +10,10 @@ const Register = () => {
   });
   const [showError, setShowError] = useState(false);
   const [passwordError, setPasswordError] = useState('');
+  const [registrationSubmitted, setRegistrationSubmitted] = useState(false);
+  const navigate = useNavigate();
   
-  const { register, error, clearErrors } = useContext(AuthContext);
+  const { register, error, approvalStatus, clearErrors } = useContext(AuthContext);
   
   const { username, password, confirmPassword } = formData;
   
@@ -41,7 +43,7 @@ const Register = () => {
     }
   };
   
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (password !== confirmPassword) {
@@ -49,9 +51,31 @@ const Register = () => {
       return;
     }
     
-    register(username, password);
+    await register(username, password);
+    setRegistrationSubmitted(true);
   };
   
+  // If registration was submitted successfully, show pending approval message
+  if (registrationSubmitted && !error) {
+    return (
+      <div className="form-container">
+        <div className="registration-success">
+          <h1 className="form-title">Registration Submitted</h1>
+          <div className="alert alert-info">
+            <p>Thank you for registering! Your account is pending administrator approval.</p>
+            <p>You will be able to log in once your account has been approved.</p>
+          </div>
+          <button 
+            className="btn btn-primary"
+            onClick={() => navigate('/login')}
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="form-container">
       <h1 className="form-title">Register</h1>
@@ -59,6 +83,10 @@ const Register = () => {
       {showError && (
         <div className="alert alert-danger">{error}</div>
       )}
+      
+      <div className="alert alert-warning">
+        <p><strong>Note:</strong> New accounts require administrator approval before they can be used.</p>
+      </div>
       
       <form onSubmit={handleSubmit}>
         <div className="form-group">

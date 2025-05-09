@@ -9,6 +9,8 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [approvalStatus, setApprovalStatus] = useState(null);
+  const [pendingUsers, setPendingUsers] = useState([]);
 
   // Register user
   const register = async (username, password) => {
@@ -40,6 +42,7 @@ export const AuthProvider = ({ children }) => {
   // Login user
   const login = async (username, password) => {
     setError(null);
+    setApprovalStatus(null);
     
     const config = {
       headers: {
@@ -56,12 +59,22 @@ export const AuthProvider = ({ children }) => {
       setUser(res.data.user);
       setIsAuthenticated(true);
       setLoading(false);
+      
+      if (res.data.user.approvalStatus) {
+        setApprovalStatus(res.data.user.approvalStatus);
+      }
     } catch (err) {
       localStorage.removeItem('token');
       setToken(null);
       setIsAuthenticated(false);
       setLoading(false);
       setUser(null);
+      
+      // Check if the error is due to pending approval
+      if (err.response?.status === 403 && err.response?.data?.approvalStatus) {
+        setApprovalStatus(err.response.data.approvalStatus);
+      }
+      
       setError(err.response?.data?.message || 'Login failed');
     }
   };
@@ -73,6 +86,8 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false);
     setLoading(false);
     setUser(null);
+    setApprovalStatus(null);
+    setPendingUsers([]);
   };
 
   // Load user
@@ -108,6 +123,46 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Get pending users (admin only)
+  const getPendingUsers = async () => {
+    try {
+      const res = await axios.get('/api/auth/pending-users');
+      setPendingUsers(res.data);
+      return res.data;
+    } catch (err) {
+      console.error('Failed to get pending users:', err);
+      return [];
+    }
+  };
+
+  // Approve user (admin only)
+  const approveUser = async (userId) => {
+    try {
+      const res = await axios.put(`/api/auth/approve-user/${userId}`);
+      // Update pending users list
+      setPendingUsers(pendingUsers.filter(user => user._id !== userId));
+      return res.data;
+    } catch (err) {
+      console.error('Failed to approve user:', err);
+      setError(err.response?.data?.message || 'Failed to approve user');
+      return null;
+    }
+  };
+
+  // Reject user (admin only)
+  const rejectUser = async (userId) => {
+    try {
+      const res = await axios.put(`/api/auth/reject-user/${userId}`);
+      // Update pending users list
+      setPendingUsers(pendingUsers.filter(user => user._id !== userId));
+      return res.data;
+    } catch (err) {
+      console.error('Failed to reject user:', err);
+      setError(err.response?.data?.message || 'Failed to reject user');
+      return null;
+    }
+  };
+
   // Clear errors
   const clearErrors = () => {
     setError(null);
@@ -121,11 +176,16 @@ export const AuthProvider = ({ children }) => {
         loading,
         user,
         error,
+        approvalStatus,
+        pendingUsers,
         register,
         login,
         logout,
         loadUser,
-        clearErrors
+        clearErrors,
+        getPendingUsers,
+        approveUser,
+        rejectUser
       }}
     >
       {children}

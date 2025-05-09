@@ -9,7 +9,7 @@ const Login = () => {
   });
   const [showError, setShowError] = useState(false);
   
-  const { login, error, clearErrors, isAuthenticated } = useContext(AuthContext);
+  const { login, error, approvalStatus, clearErrors, isAuthenticated } = useContext(AuthContext);
   
   const { username, password } = formData;
   
@@ -40,6 +40,20 @@ const Login = () => {
       
       {showError && (
         <div className="alert alert-danger">{error}</div>
+      )}
+      
+      {approvalStatus === 'pending' && (
+        <div className="alert alert-warning">
+          <strong>Account Pending Approval</strong>
+          <p>Your account is currently pending administrator approval. You will be able to log in once your account has been approved.</p>
+        </div>
+      )}
+      
+      {approvalStatus === 'rejected' && (
+        <div className="alert alert-danger">
+          <strong>Account Rejected</strong>
+          <p>Your registration has been rejected by an administrator. Please contact support for more information.</p>
+        </div>
       )}
       
       <form onSubmit={handleSubmit}>

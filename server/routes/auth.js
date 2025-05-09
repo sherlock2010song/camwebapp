@@ -32,10 +32,12 @@ router.post(
         return res.status(400).json({ message: 'User already exists' });
       }
 
-      // Create new user
+      // Create new user with pending approval status
       user = new User({
         username,
-        password
+        password,
+        approved: false,
+        approvalStatus: 'pending'
       });
 
       // Encrypt password
@@ -92,6 +94,14 @@ router.post(
       if (!user) {
         return res.status(400).json({ message: 'Invalid credentials' });
       }
+      
+      // Check if user is approved (skip for admin)
+      if (!user.isAdmin && user.approvalStatus !== 'approved') {
+        return res.status(403).json({ 
+          message: 'Your account is pending approval',
+          approvalStatus: user.approvalStatus
+        });
+      }
 
       // Check password
       const isMatch = await bcrypt.compare(password, user.password);
@@ -118,7 +128,9 @@ router.post(
             user: {
               id: user.id,
               username: user.username,
-              isAdmin: user.isAdmin
+              isAdmin: user.isAdmin,
+              approved: user.approved,
+              approvalStatus: user.approvalStatus
             }
           });
         }
@@ -137,6 +149,85 @@ router.get('/user', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
     res.json(user);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
+// @route   GET api/auth/pending-users
+// @desc    Get all users with pending approval (admin only)
+// @access  Private/Admin
+router.get('/pending-users', auth, async (req, res) => {
+  try {
+    // Check if user is admin
+    const admin = await User.findById(req.user.id);
+    if (!admin.isAdmin) {
+      return res.status(403).json({ message: 'Not authorized as admin' });
+    }
+
+    // Get all pending users
+    const pendingUsers = await User.find({ approvalStatus: 'pending' })
+      .select('-password')
+      .sort({ createdAt: -1 });
+
+    res.json(pendingUsers);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
+// @route   PUT api/auth/approve-user/:userId
+// @desc    Approve a user (admin only)
+// @access  Private/Admin
+router.put('/approve-user/:userId', auth, async (req, res) => {
+  try {
+    // Check if user is admin
+    const admin = await User.findById(req.user.id);
+    if (!admin.isAdmin) {
+      return res.status(403).json({ message: 'Not authorized as admin' });
+    }
+
+    // Find and update user
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.approved = true;
+    user.approvalStatus = 'approved';
+    await user.save();
+
+    res.json({ message: 'User approved successfully', user });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
+// @route   PUT api/auth/reject-user/:userId
+// @desc    Reject a user (admin only)
+// @access  Private/Admin
+router.put('/reject-user/:userId', auth, async (req, res) => {
+  try {
+    // Check if user is admin
+    const admin = await User.findById(req.user.id);
+    if (!admin.isAdmin) {
+      return res.status(403).json({ message: 'Not authorized as admin' });
+    }
+
+    // Find and update user
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.approved = false;
+    user.approvalStatus = 'rejected';
+    await user.save();
+
+    res.json({ message: 'User rejected successfully', user });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');

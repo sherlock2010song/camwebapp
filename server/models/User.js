@@ -18,6 +18,15 @@ const UserSchema = new Schema({
     type: Boolean,
     default: false
   },
+  approved: {
+    type: Boolean,
+    default: false
+  },
+  approvalStatus: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
+  },
   ocrHistory: [
     {
       imageUrl: {

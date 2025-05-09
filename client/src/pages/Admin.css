@@ -4,6 +4,58 @@
   margin: 0 auto;
 }
 
+.admin-tabs {
+  display: flex;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tab-button {
+  padding: 0.75rem 1.5rem;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.tab-button:hover {
+  color: var(--primary-color);
+}
+
+.tab-button.active {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.tab-button.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: var(--primary-color);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  background-color: var(--danger-color);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 0.5rem;
+  padding: 0 6px;
+}
+
 .page-title {
   text-align: center;
   margin-bottom: 2rem;
@@ -68,9 +120,66 @@
   background-color: #f8f9fa;
 }
 
+.approval-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-badge.pending {
+  background-color: #fcf8e3;
+  color: #8a6d3b;
+}
+
+.status-badge.approved {
+  background-color: #dff0d8;
+  color: #3c763d;
+}
+
+.status-badge.rejected {
+  background-color: #f2dede;
+  color: #a94442;
+}
+
+.approval-card {
+  border-left: 4px solid var(--primary-color);
+}
+
 .confirm-buttons {
   display: flex;
   gap: 0.5rem;
+}
+
+.btn-success {
+  background-color: #5cb85c;
+  border-color: #4cae4c;
+  color: white;
+}
+
+.btn-success:hover {
+  background-color: #449d44;
+  border-color: #398439;
+}
+
+.registration-success {
+  text-align: center;
+  padding: 2rem;
+  max-width: 600px;
+  margin: 0 auto;
+  animation: fade-in 0.5s ease-in-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .stats-card {
