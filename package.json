@@ -1,0 +1,24 @@
+{
+  "name": "camera-ocr-app",
+  "version": "1.0.0",
+  "description": "A web application for camera OCR using AI",
+  "main": "index.js",
+  "scripts": {
+    "start": "cd server && npm start",
+    "client": "cd client && npm start",
+    "server": "cd server && npm run dev",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "install-all": "npm install && cd client && npm install && cd ../server && npm install"
+  },
+  "keywords": [
+    "camera",
+    "ocr",
+    "ai",
+    "openrouter"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}
