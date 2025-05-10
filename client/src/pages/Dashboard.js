@@ -24,6 +24,17 @@ const Dashboard = () => {
         
         <div className="dashboard-card">
           <div className="card-icon">
+            <i className="fas fa-upload"></i>
+          </div>
+          <h2>Upload Image</h2>
+          <p>Upload an image from your device and extract text using OCR.</p>
+          <Link to="/upload" className="btn btn-primary">
+            Upload Image
+          </Link>
+        </div>
+        
+        <div className="dashboard-card">
+          <div className="card-icon">
             <i className="fas fa-history"></i>
           </div>
           <h2>View History</h2>
@@ -50,14 +61,17 @@ const Dashboard = () => {
       <div className="dashboard-instructions">
         <h2>How to use:</h2>
         <ol>
-          <li>Go to the <strong>Camera</strong> page.</li>
-          <li>Allow camera access when prompted.</li>
-          <li>Take a photo of the text you want to extract.</li>
-          <li>The OCR will process the image and extract the text.</li>
-          <li>Copy the text or save it for later.</li>
+          <li>Choose one of the options:</li>
+          <ul>
+            <li><strong>Take a Photo</strong>: Use your device's camera to capture an image.</li>
+            <li><strong>Upload Image</strong>: Select an image from your photo library or local files.</li>
+          </ul>
+          <li>Process the image using the "Extract Text" button.</li>
+          <li>The OCR will extract the text from your image.</li>
+          <li>Copy the extracted text or view it in your history later.</li>
         </ol>
         <p className="note">
-          <strong>Note:</strong> For best results, ensure good lighting and that the text is clear in the frame.
+          <strong>Note:</strong> For best results, ensure good lighting and that the text is clear in the image.
         </p>
       </div>
     </div>

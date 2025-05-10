@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Camera from './pages/Camera';
+import Upload from './pages/Upload';
 import History from './pages/History';
 import Admin from './pages/Admin';
 import NotFound from './pages/NotFound';
@@ -46,6 +47,7 @@ function App() {
           
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="/camera" element={<PrivateRoute><Camera /></PrivateRoute>} />
+          <Route path="/upload" element={<PrivateRoute><Upload /></PrivateRoute>} />
           <Route path="/history" element={<PrivateRoute><History /></PrivateRoute>} />
           <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
           
