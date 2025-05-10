@@ -184,12 +184,11 @@ const Camera = () => {
     setError('');
 
     try {
-      // Compress image before sending to OCR
-      const compressedImage = await compressImage(capturedImage);
-      console.log(`Original size: ~${Math.round(capturedImage.length/1024)}KB, Compressed: ~${Math.round(compressedImage.length/1024)}KB`);
+      // Use original image without compression for better quality
+      console.log(`Using original image size: ~${Math.round(capturedImage.length/1024)}KB`);
       
       const res = await axios.post('/api/ocr/process', {
-        imageData: compressedImage
+        imageData: capturedImage
       });
 
       setOcrText(res.data.ocrText);
