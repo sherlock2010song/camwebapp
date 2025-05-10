@@ -109,6 +109,8 @@ const Camera = () => {
   const [copied, setCopied] = useState(false);
   const [facingMode, setFacingMode] = useState(isMobile() ? 'environment' : 'user');
   const [cameraPermission, setCameraPermission] = useState(null);
+  const [activeTab, setActiveTab] = useState('camera'); // 'camera' or 'upload'
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     const checkCameraPermission = async () => {
@@ -174,6 +176,26 @@ const Camera = () => {
     setOcrText('');
     setError('');
     setCopied(false);
+  };
+
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    
+    if (file) {
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        setCapturedImage(e.target.result);
+        setOcrText('');
+        setError('');
+      };
+      
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  const triggerFileInput = () => {
+    fileInputRef.current.click();
   };
 
   const processImage = async () => {
@@ -259,32 +281,67 @@ const Camera = () => {
     <div className="camera-page">
       <h1 className="page-title">Camera OCR</h1>
       
+      <div className="tab-navigation">
+        <button 
+          className={`tab-button ${activeTab === 'camera' ? 'active' : ''}`}
+          onClick={() => setActiveTab('camera')}
+        >
+          Camera
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'upload' ? 'active' : ''}`}
+          onClick={() => setActiveTab('upload')}
+        >
+          Upload Image
+        </button>
+      </div>
+      
+      {/* Hidden file input */}
+      <input
+        type="file"
+        accept="image/*"
+        ref={fileInputRef}
+        style={{ display: 'none' }}
+        onChange={handleFileUpload}
+      />
+      
       <div className="camera-container">
         {!capturedImage ? (
           <>
-            <Webcam
-              audio={false}
-              ref={webcamRef}
-              screenshotFormat="image/jpeg"
-              videoConstraints={videoConstraints}
-              className="camera-feed"
-            />
-            <div className="camera-controls">
-              <button 
-                className="camera-btn camera-btn-switch"
-                onClick={switchCamera}
-                aria-label="Switch Camera"
-              >
-                <span className="btn-icon">↺</span>
-              </button>
-              <button 
-                className="camera-btn camera-btn-capture"
-                onClick={capture}
-                aria-label="Take Photo"
-              >
-                <div className="camera-btn-inner"></div>
-              </button>
-            </div>
+            {activeTab === 'camera' ? (
+              <>
+                <Webcam
+                  audio={false}
+                  ref={webcamRef}
+                  screenshotFormat="image/jpeg"
+                  videoConstraints={videoConstraints}
+                  className="camera-feed"
+                />
+                <div className="camera-controls">
+                  <button 
+                    className="camera-btn camera-btn-switch"
+                    onClick={switchCamera}
+                    aria-label="Switch Camera"
+                  >
+                    <span className="btn-icon">↺</span>
+                  </button>
+                  <button 
+                    className="camera-btn camera-btn-capture"
+                    onClick={capture}
+                    aria-label="Take Photo"
+                  >
+                    <div className="camera-btn-inner"></div>
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="upload-container">
+                <div className="upload-box" onClick={triggerFileInput}>
+                  <div className="upload-icon">+</div>
+                  <p>Click to select an image from your photo library</p>
+                </div>
+              </div>
+            )}
           </>
         ) : (
           <>
