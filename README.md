@@ -5,7 +5,7 @@ A web application that allows users to capture images using a mobile camera and 
 ## Features
 
 - Mobile camera integration (optimized for iOS)
-- OCR processing using OpenRouter AI API (google/gemini-2.5-pro-preview)
+- OCR processing using OpenRouter AI API (google/gemini-2.0-flash)
 - User authentication (username/password)
 - Cross-device text sharing
 - Admin account for management
