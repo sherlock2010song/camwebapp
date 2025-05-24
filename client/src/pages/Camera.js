@@ -156,25 +156,36 @@ const Camera = () => {
   };
 
   const capture = useCallback(() => {
+    console.log('--- CAPTURE FUNCTION CALLED ---');
     if (webcamRef.current && webcamRef.current.video) {
       const video = webcamRef.current.video;
-      const canvas = document.createElement('canvas');
-      console.log('Actual video dimensions:', video.videoWidth, 'x', video.videoHeight);
-      if (video.srcObject && typeof video.srcObject.getVideoTracks === 'function') {
-        const tracks = video.srcObject.getVideoTracks();
-        if (tracks.length > 0 && typeof tracks[0].getSettings === 'function') {
-          console.log('Video track settings:', tracks[0].getSettings());
+      // Check if video is ready (readyState >= 2 means HAVE_CURRENT_DATA)
+      if (video.readyState >= 2) {
+        console.log('Attempting to capture frame. Actual video dimensions:', video.videoWidth, 'x', video.videoHeight);
+        if (video.srcObject && typeof video.srcObject.getVideoTracks === 'function') {
+          const tracks = video.srcObject.getVideoTracks();
+          if (tracks.length > 0 && typeof tracks[0].getSettings === 'function') {
+            console.log('Video track settings:', tracks[0].getSettings());
+          } else {
+            console.log('Video track but getSettings not available or no tracks.');
+          }
+        } else {
+          console.log('video.srcObject or getVideoTracks not available.');
         }
-      }
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d');
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const imageSrc = canvas.toDataURL('image/jpeg', 0.92);
       
       setCapturedImage(imageSrc);
       setOcrText('');
       setError('');
+      } else {
+        console.error("Video not ready. readyState:", video.readyState);
+        setError("Video stream not ready, please try again.");
+      }
     } else {
       console.error("Webcam or video element not found.");
       // Optionally set an error state here if desired
