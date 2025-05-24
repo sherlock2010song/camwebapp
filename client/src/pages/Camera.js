@@ -157,11 +157,22 @@ const Camera = () => {
   };
 
   const capture = useCallback(() => {
-    const imageSrc = webcamRef.current?.getScreenshot();
-    if (imageSrc) {
+    if (webcamRef.current && webcamRef.current.video) {
+      const video = webcamRef.current.video;
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageSrc = canvas.toDataURL('image/jpeg', 0.92);
+      
       setCapturedImage(imageSrc);
       setOcrText('');
       setError('');
+    } else {
+      console.error("Webcam or video element not found.");
+      // Optionally set an error state here if desired
+      // setError("Could not capture image. Webcam not available.");
     }
   }, [webcamRef]);
 
