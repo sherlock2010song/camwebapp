@@ -146,11 +146,10 @@ const Camera = () => {
   }, []);
 
   const videoConstraints = {
-    width: { min: 1280, ideal: 1920, max: 2560 },
-    height: { min: 1280, ideal: 1920, max: 2560 },
+    width: { ideal: 1280 },
+    height: { ideal: 720 },
     facingMode: facingMode,
-    aspectRatio: { ideal: 1 },
-    frameRate: { min: 15, ideal: 30 },
+    frameRate: { ideal: 30 },
     focusMode: "continuous",
     exposureMode: "continuous",
     whiteBalanceMode: "continuous"
@@ -160,6 +159,13 @@ const Camera = () => {
     if (webcamRef.current && webcamRef.current.video) {
       const video = webcamRef.current.video;
       const canvas = document.createElement('canvas');
+      console.log('Actual video dimensions:', video.videoWidth, 'x', video.videoHeight);
+      if (video.srcObject && typeof video.srcObject.getVideoTracks === 'function') {
+        const tracks = video.srcObject.getVideoTracks();
+        if (tracks.length > 0 && typeof tracks[0].getSettings === 'function') {
+          console.log('Video track settings:', tracks[0].getSettings());
+        }
+      }
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext('2d');
